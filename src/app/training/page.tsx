@@ -1,5 +1,5 @@
-import { createClient } from "@/lib/supabase/server";
 import { createTrainingProgram, deleteTrainingProgram } from "@/lib/actions";
+import { listTrainingPrograms } from "@/lib/training-programs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -23,11 +23,7 @@ import { Badge } from "@/components/ui/badge";
 import { Clock } from "lucide-react";
 
 export default async function TrainingPage() {
-  const supabase = await createClient();
-  const { data: programs } = await supabase
-    .from("training_programs")
-    .select("*")
-    .order("created_at", { ascending: false });
+  const programs = await listTrainingPrograms();
 
   return (
     <div className="space-y-6">

@@ -5,6 +5,10 @@ import {
   createEntity as createEntityRecord,
   deleteEntity as deleteEntityRecord,
 } from "@/lib/entities";
+import {
+  createTrainingProgram as createTrainingProgramRecord,
+  deleteTrainingProgram as deleteTrainingProgramRecord,
+} from "@/lib/training-programs";
 import { createClient } from "@/lib/supabase/server";
 
 export async function createEntity(formData: FormData) {
@@ -45,20 +49,24 @@ export async function deleteManager(id: string, formData?: FormData) {
 }
 
 export async function createTrainingProgram(formData: FormData) {
-  const supabase = await createClient();
-  await supabase.from("training_programs").insert({
-    title: formData.get("title") as string,
-    description: (formData.get("description") as string) || null,
-    duration_hours: formData.get("duration_hours")
-      ? parseInt(formData.get("duration_hours") as string)
-      : null,
+  const title = String(formData.get("title") ?? "").trim();
+
+  if (!title) {
+    throw new Error("Training program title is required.");
+  }
+
+  const durationHours = String(formData.get("duration_hours") ?? "").trim();
+
+  await createTrainingProgramRecord({
+    title,
+    description: String(formData.get("description") ?? "").trim() || null,
+    duration_hours: durationHours ? parseInt(durationHours) : null,
   });
   revalidatePath("/training");
 }
 
 export async function deleteTrainingProgram(id: string, formData?: FormData) {
-  const supabase = await createClient();
-  await supabase.from("training_programs").delete().eq("id", id);
+  await deleteTrainingProgramRecord(id);
   revalidatePath("/training");
 }
 

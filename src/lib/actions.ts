@@ -13,6 +13,10 @@ import {
   createFinanceManager as createFinanceManagerRecord,
   deleteFinanceManager as deleteFinanceManagerRecord,
 } from "@/lib/finance-managers";
+import {
+  createCertification as createCertificationRecord,
+  revokeCertification as revokeCertificationRecord,
+} from "@/lib/certifications";
 import { createClient } from "@/lib/supabase/server";
 
 export async function createEntity(formData: FormData) {
@@ -84,19 +88,27 @@ export async function deleteTrainingProgram(id: string, formData?: FormData) {
 }
 
 export async function createCertification(formData: FormData) {
-  const supabase = await createClient();
-  await supabase.from("certifications").insert({
-    manager_id: formData.get("manager_id") as string,
-    program_id: formData.get("program_id") as string,
-    expires_at: (formData.get("expires_at") as string) || null,
-    status: "valid",
+  const managerId = String(formData.get("manager_id") ?? "").trim();
+  const programId = String(formData.get("program_id") ?? "").trim();
+
+  if (!managerId) {
+    throw new Error("Manager is required.");
+  }
+
+  if (!programId) {
+    throw new Error("Training program is required.");
+  }
+
+  await createCertificationRecord({
+    manager_id: managerId,
+    program_id: programId,
+    expires_at: String(formData.get("expires_at") ?? "").trim() || null,
   });
   revalidatePath("/certifications");
 }
 
 export async function revokeCertification(id: string, formData?: FormData) {
-  const supabase = await createClient();
-  await supabase.from("certifications").update({ status: "revoked" }).eq("id", id);
+  await revokeCertificationRecord(id);
   revalidatePath("/certifications");
 }
 

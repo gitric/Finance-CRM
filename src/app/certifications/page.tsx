@@ -1,5 +1,7 @@
-import { createClient } from "@/lib/supabase/server";
 import { createCertification, revokeCertification } from "@/lib/actions";
+import { listCertifications } from "@/lib/certifications";
+import { listFinanceManagers } from "@/lib/finance-managers";
+import { listTrainingPrograms } from "@/lib/training-programs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -23,23 +25,17 @@ import { Badge } from "@/components/ui/badge";
 export const dynamic = "force-dynamic";
 
 export default async function CertificationsPage() {
-  const supabase = await createClient();
-  const { data: certifications } = await supabase
-    .from("certifications")
-    .select("*, finance_managers(full_name), training_programs(title)")
-    .order("issued_at", { ascending: false });
-
-  const { data: managers } = await supabase
-    .from("finance_managers")
-    .select("id, full_name")
-    .eq("status", "active")
-    .order("full_name");
-
-  const { data: programs } = await supabase
-    .from("training_programs")
-    .select("id, title")
-    .eq("status", "active")
-    .order("title");
+  const [certifications, managers, programs] = await Promise.all([
+    listCertifications(),
+    listFinanceManagers(),
+    listTrainingPrograms(),
+  ]);
+  const activeManagers = managers
+    .filter((manager) => manager.status === "active")
+    .sort((a, b) => a.full_name.localeCompare(b.full_name));
+  const activePrograms = programs
+    .filter((program) => program.status === "active")
+    .sort((a, b) => a.title.localeCompare(b.title));
 
   return (
     <div className="space-y-6">
@@ -68,7 +64,7 @@ export default async function CertificationsPage() {
                     className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                   >
                     <option value="">Select Manager</option>
-                    {managers?.map((m) => (
+                    {activeManagers.map((m) => (
                       <option key={m.id} value={m.id}>
                         {m.full_name}
                       </option>
@@ -83,7 +79,7 @@ export default async function CertificationsPage() {
                     className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                   >
                     <option value="">Select Program</option>
-                    {programs?.map((p) => (
+                    {activePrograms.map((p) => (
                       <option key={p.id} value={p.id}>
                         {p.title}
                       </option>
@@ -116,14 +112,14 @@ export default async function CertificationsPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {certifications && certifications.length > 0 ? (
+            {certifications.length > 0 ? (
               certifications.map((cert) => (
                 <TableRow key={cert.id}>
                   <TableCell className="font-medium">
-                    {cert.finance_managers?.full_name || "—"}
+                    {cert.manager_name || "—"}
                   </TableCell>
                   <TableCell>
-                    {cert.training_programs?.title || "—"}
+                    {cert.program_title || "—"}
                   </TableCell>
                   <TableCell>
                     {cert.issued_at ? cert.issued_at.split("T")[0] : "—"}

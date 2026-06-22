@@ -44,6 +44,15 @@ jobs:
       - name: Install Firebase CLI
         run: npm install --global firebase-tools
 
+      - name: Validate Firebase deploy permissions
+        run: |
+          firebase functions:list --project "$FIREBASE_PROJECT_ID" --non-interactive || {
+            echo "::error::Firebase CLI cannot list Cloud Functions for this project. Firebase Hosting webframeworks needs Cloud Functions access for the Next.js backend; grant the deploy service account Cloud Functions permissions and ensure the Cloud Functions API is enabled."
+            exit 1
+          }
+        env:
+          FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
+
       - name: Deploy Firebase Hosting and Firestore rules
         run: firebase deploy --only hosting,firestore:rules --project "$FIREBASE_PROJECT_ID" --non-interactive
         env:

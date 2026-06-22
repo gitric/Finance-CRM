@@ -1,5 +1,5 @@
-import { createClient } from "@/lib/supabase/server";
 import { createEntity, deleteEntity } from "@/lib/actions";
+import { listEntities } from "@/lib/entities";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -20,12 +20,10 @@ import {
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 
+export const dynamic = "force-dynamic";
+
 export default async function EntitiesPage() {
-  const supabase = await createClient();
-  const { data: entities } = await supabase
-    .from("entities")
-    .select("*")
-    .order("created_at", { ascending: false });
+  const entities = await listEntities();
 
   return (
     <div className="space-y-6">
@@ -79,7 +77,7 @@ export default async function EntitiesPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {entities && entities.length > 0 ? (
+            {entities.length > 0 ? (
               entities.map((entity) => (
                 <TableRow key={entity.id}>
                   <TableCell className="font-medium">{entity.name}</TableCell>

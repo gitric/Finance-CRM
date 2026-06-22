@@ -1,21 +1,29 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import {
+  createEntity as createEntityRecord,
+  deleteEntity as deleteEntityRecord,
+} from "@/lib/entities";
 import { createClient } from "@/lib/supabase/server";
 
 export async function createEntity(formData: FormData) {
-  const supabase = await createClient();
-  await supabase.from("entities").insert({
-    name: formData.get("name") as string,
-    industry: (formData.get("industry") as string) || null,
-    location: (formData.get("location") as string) || null,
+  const name = String(formData.get("name") ?? "").trim();
+
+  if (!name) {
+    throw new Error("Entity name is required.");
+  }
+
+  await createEntityRecord({
+    name,
+    industry: String(formData.get("industry") ?? "").trim() || null,
+    location: String(formData.get("location") ?? "").trim() || null,
   });
   revalidatePath("/entities");
 }
 
 export async function deleteEntity(id: string, formData?: FormData) {
-  const supabase = await createClient();
-  await supabase.from("entities").delete().eq("id", id);
+  await deleteEntityRecord(id);
   revalidatePath("/entities");
 }
 

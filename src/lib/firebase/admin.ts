@@ -1,7 +1,15 @@
 import { cert, getApps, initializeApp } from "firebase-admin/app";
 import { getFirestore } from "firebase-admin/firestore";
 
-function requiredEnv(name: string) {
+function hasServiceAccountEnv() {
+  return (
+    process.env.FIREBASE_PROJECT_ID &&
+    process.env.FIREBASE_CLIENT_EMAIL &&
+    process.env.FIREBASE_PRIVATE_KEY
+  );
+}
+
+function serviceAccountEnv(name: string) {
   const value = process.env[name];
 
   if (!value) {
@@ -13,13 +21,20 @@ function requiredEnv(name: string) {
 
 export function getFirebaseAdminDb() {
   if (!getApps().length) {
-    initializeApp({
-      credential: cert({
-        projectId: requiredEnv("FIREBASE_PROJECT_ID"),
-        clientEmail: requiredEnv("FIREBASE_CLIENT_EMAIL"),
-        privateKey: requiredEnv("FIREBASE_PRIVATE_KEY").replace(/\\n/g, "\n"),
-      }),
-    });
+    if (hasServiceAccountEnv()) {
+      initializeApp({
+        credential: cert({
+          projectId: serviceAccountEnv("FIREBASE_PROJECT_ID"),
+          clientEmail: serviceAccountEnv("FIREBASE_CLIENT_EMAIL"),
+          privateKey: serviceAccountEnv("FIREBASE_PRIVATE_KEY").replace(
+            /\\n/g,
+            "\n",
+          ),
+        }),
+      });
+    } else {
+      initializeApp();
+    }
   }
 
   return getFirestore();

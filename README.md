@@ -1,4 +1,24 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+This is a Next.js internal demo backed by Firebase Firestore.
+
+## Firebase Setup
+
+Server-side Firestore access uses Firebase Admin SDK credentials from environment variables:
+
+```bash
+FIREBASE_PROJECT_ID=
+FIREBASE_CLIENT_EMAIL=
+FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
+```
+
+The Firestore collection model is documented in `docs/firestore-collection-model.md`.
+
+For manual Firebase CLI deployment, authenticate with the Firebase CLI, select the target project, then run:
+
+```bash
+firebase deploy
+```
+
+`firestore.rules` contains permissive rules for an internal demo only. They are not production-ready authorization.
 
 ## Getting Started
 

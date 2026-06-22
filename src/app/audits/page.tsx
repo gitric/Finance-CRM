@@ -21,6 +21,8 @@ import {
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 
+export const dynamic = "force-dynamic";
+
 export default async function AuditsPage() {
   const supabase = await createClient();
   const { data: audits } = await supabase

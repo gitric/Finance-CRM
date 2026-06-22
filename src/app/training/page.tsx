@@ -22,6 +22,8 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Clock } from "lucide-react";
 
+export const dynamic = "force-dynamic";
+
 export default async function TrainingPage() {
   const programs = await listTrainingPrograms();
 

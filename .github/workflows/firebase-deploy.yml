@@ -54,7 +54,7 @@ jobs:
           FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
 
       - name: Deploy Firebase Hosting and Firestore rules
-        run: firebase deploy --only hosting,firestore:rules --project "$FIREBASE_PROJECT_ID" --non-interactive
+        run: firebase deploy --only hosting,firestore:rules --project "$FIREBASE_PROJECT_ID" --non-interactive --force
         env:
           FIREBASE_CLI_EXPERIMENTS: webframeworks
           FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}

@@ -9,6 +9,10 @@ import {
   createTrainingProgram as createTrainingProgramRecord,
   deleteTrainingProgram as deleteTrainingProgramRecord,
 } from "@/lib/training-programs";
+import {
+  createFinanceManager as createFinanceManagerRecord,
+  deleteFinanceManager as deleteFinanceManagerRecord,
+} from "@/lib/finance-managers";
 import { createClient } from "@/lib/supabase/server";
 
 export async function createEntity(formData: FormData) {
@@ -32,19 +36,28 @@ export async function deleteEntity(id: string, formData?: FormData) {
 }
 
 export async function createManager(formData: FormData) {
-  const supabase = await createClient();
-  await supabase.from("finance_managers").insert({
-    full_name: formData.get("full_name") as string,
-    email: formData.get("email") as string,
-    phone: (formData.get("phone") as string) || null,
-    entity_id: (formData.get("entity_id") as string) || null,
+  const fullName = String(formData.get("full_name") ?? "").trim();
+  const email = String(formData.get("email") ?? "").trim();
+
+  if (!fullName) {
+    throw new Error("Manager full name is required.");
+  }
+
+  if (!email) {
+    throw new Error("Manager email is required.");
+  }
+
+  await createFinanceManagerRecord({
+    full_name: fullName,
+    email,
+    phone: String(formData.get("phone") ?? "").trim() || null,
+    entity_id: String(formData.get("entity_id") ?? "").trim() || null,
   });
   revalidatePath("/managers");
 }
 
 export async function deleteManager(id: string, formData?: FormData) {
-  const supabase = await createClient();
-  await supabase.from("finance_managers").delete().eq("id", id);
+  await deleteFinanceManagerRecord(id);
   revalidatePath("/managers");
 }
 

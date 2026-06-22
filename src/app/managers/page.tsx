@@ -1,5 +1,6 @@
-import { createClient } from "@/lib/supabase/server";
 import { createManager, deleteManager } from "@/lib/actions";
+import { listEntities } from "@/lib/entities";
+import { listFinanceManagers } from "@/lib/finance-managers";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -20,18 +21,16 @@ import {
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 
-export default async function ManagersPage() {
-  const supabase = await createClient();
-  const { data: managers } = await supabase
-    .from("finance_managers")
-    .select("*, entities(name)")
-    .order("created_at", { ascending: false });
+export const dynamic = "force-dynamic";
 
-  const { data: entities } = await supabase
-    .from("entities")
-    .select("id, name")
-    .eq("status", "active")
-    .order("name");
+export default async function ManagersPage() {
+  const [managers, entities] = await Promise.all([
+    listFinanceManagers(),
+    listEntities(),
+  ]);
+  const activeEntities = entities
+    .filter((entity) => entity.status === "active")
+    .sort((a, b) => a.name.localeCompare(b.name));
 
   return (
     <div className="space-y-6">
@@ -71,7 +70,7 @@ export default async function ManagersPage() {
                     className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                   >
                     <option value="">Select Entity</option>
-                    {entities?.map((entity) => (
+                    {activeEntities.map((entity) => (
                       <option key={entity.id} value={entity.id}>
                         {entity.name}
                       </option>
@@ -99,14 +98,14 @@ export default async function ManagersPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {managers && managers.length > 0 ? (
+            {managers.length > 0 ? (
               managers.map((manager) => (
                 <TableRow key={manager.id}>
                   <TableCell className="font-medium">
                     {manager.full_name}
                   </TableCell>
                   <TableCell>{manager.email}</TableCell>
-                  <TableCell>{manager.entities?.name || "—"}</TableCell>
+                  <TableCell>{manager.entity_name || "—"}</TableCell>
                   <TableCell>
                     <Badge
                       variant={

@@ -17,7 +17,11 @@ import {
   createCertification as createCertificationRecord,
   revokeCertification as revokeCertificationRecord,
 } from "@/lib/certifications";
-import { createClient } from "@/lib/supabase/server";
+import {
+  completeAudit as completeAuditRecord,
+  createAudit as createAuditRecord,
+  deleteAudit as deleteAuditRecord,
+} from "@/lib/audits";
 
 export async function createEntity(formData: FormData) {
   const name = String(formData.get("name") ?? "").trim();
@@ -113,32 +117,44 @@ export async function revokeCertification(id: string, formData?: FormData) {
 }
 
 export async function createAudit(formData: FormData) {
-  const supabase = await createClient();
-  await supabase.from("audits").insert({
-    entity_id: (formData.get("entity_id") as string) || null,
-    manager_id: (formData.get("manager_id") as string) || null,
-    audit_year: parseInt(formData.get("audit_year") as string),
-    due_date: (formData.get("due_date") as string) || null,
-    status: "scheduled",
+  const entityId = String(formData.get("entity_id") ?? "").trim();
+  const managerId = String(formData.get("manager_id") ?? "").trim();
+  const auditYear = parseInt(String(formData.get("audit_year") ?? ""));
+  const dueDate = String(formData.get("due_date") ?? "").trim();
+
+  if (!entityId) {
+    throw new Error("Entity is required.");
+  }
+
+  if (!managerId) {
+    throw new Error("Manager is required.");
+  }
+
+  if (!Number.isInteger(auditYear)) {
+    throw new Error("Audit year is required.");
+  }
+
+  if (!dueDate) {
+    throw new Error("Due date is required.");
+  }
+
+  await createAuditRecord({
+    entity_id: entityId,
+    manager_id: managerId,
+    audit_year: auditYear,
+    due_date: dueDate,
   });
   revalidatePath("/audits");
 }
 
 export async function completeAudit(id: string, formData?: FormData) {
-  const supabase = await createClient();
-  await supabase
-    .from("audits")
-    .update({
-      status: "completed",
-      completed_at: new Date().toISOString(),
-      findings: (formData?.get("findings") as string) || null,
-    })
-    .eq("id", id);
+  const findings = String(formData?.get("findings") ?? "").trim() || null;
+
+  await completeAuditRecord(id, findings);
   revalidatePath("/audits");
 }
 
 export async function deleteAudit(id: string, formData?: FormData) {
-  const supabase = await createClient();
-  await supabase.from("audits").delete().eq("id", id);
+  await deleteAuditRecord(id);
   revalidatePath("/audits");
 }

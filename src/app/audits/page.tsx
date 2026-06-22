@@ -1,5 +1,7 @@
-import { createClient } from "@/lib/supabase/server";
 import { createAudit, completeAudit, deleteAudit } from "@/lib/actions";
+import { listAudits } from "@/lib/audits";
+import { listEntities } from "@/lib/entities";
+import { listFinanceManagers } from "@/lib/finance-managers";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -24,23 +26,17 @@ import { Badge } from "@/components/ui/badge";
 export const dynamic = "force-dynamic";
 
 export default async function AuditsPage() {
-  const supabase = await createClient();
-  const { data: audits } = await supabase
-    .from("audits")
-    .select("*, entities(name), finance_managers(full_name)")
-    .order("due_date", { ascending: true });
-
-  const { data: entities } = await supabase
-    .from("entities")
-    .select("id, name")
-    .eq("status", "active")
-    .order("name");
-
-  const { data: managers } = await supabase
-    .from("finance_managers")
-    .select("id, full_name")
-    .eq("status", "active")
-    .order("full_name");
+  const [audits, entities, managers] = await Promise.all([
+    listAudits(),
+    listEntities(),
+    listFinanceManagers(),
+  ]);
+  const activeEntities = entities
+    .filter((entity) => entity.status === "active")
+    .sort((a, b) => a.name.localeCompare(b.name));
+  const activeManagers = managers
+    .filter((manager) => manager.status === "active")
+    .sort((a, b) => a.full_name.localeCompare(b.full_name));
 
   const currentYear = new Date().getFullYear();
 
@@ -71,7 +67,7 @@ export default async function AuditsPage() {
                     className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                   >
                     <option value="">Select Entity</option>
-                    {entities?.map((e) => (
+                    {activeEntities.map((e) => (
                       <option key={e.id} value={e.id}>
                         {e.name}
                       </option>
@@ -86,7 +82,7 @@ export default async function AuditsPage() {
                     className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                   >
                     <option value="">Select Manager</option>
-                    {managers?.map((m) => (
+                    {activeManagers.map((m) => (
                       <option key={m.id} value={m.id}>
                         {m.full_name}
                       </option>
@@ -128,15 +124,13 @@ export default async function AuditsPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {audits && audits.length > 0 ? (
+            {audits.length > 0 ? (
               audits.map((audit) => (
                 <TableRow key={audit.id}>
                   <TableCell className="font-medium">
-                    {audit.entities?.name || "—"}
+                    {audit.entity_name || "—"}
                   </TableCell>
-                  <TableCell>
-                    {audit.finance_managers?.full_name || "—"}
-                  </TableCell>
+                  <TableCell>{audit.manager_name || "—"}</TableCell>
                   <TableCell>{audit.audit_year}</TableCell>
                   <TableCell>{audit.due_date || "—"}</TableCell>
                   <TableCell>
